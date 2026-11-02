@@ -1,0 +1,44 @@
+# WINTER = WINTER (NousResearch, MIT) yang di-brand ulang. Lihat UPSTREAM.md & NOTICE.
+# Jalankan: docker compose up -d --build   (butuh WINTER_API_KEY >=16 karakter di .env)
+# Hanya 127.0.0.1:8642 terbuka (OpenAI-compatible API). Terminal/browser agent jalan DI DALAM container.
+# Data di ~/.winter-hermes (terpisah dari ~/.hermes instalasi Hermes native).
+services:
+  winter:
+    build: .
+    image: winter-agent
+    container_name: winter
+    restart: unless-stopped
+    ports: ["127.0.0.1:8642:8642", "127.0.0.1:9120:9120"]  # 9120 = Webapp (Desktop di browser), login sama dgn dashboard
+    extra_hosts: ["host.docker.internal:host-gateway"]
+    volumes: ["${HOME}/.winter-hermes:/opt/data"]
+    environment:
+      HERMES_UID: "${HERMES_UID:-501}"
+      HERMES_GID: "${HERMES_GID:-20}"
+      API_SERVER_HOST: "0.0.0.0"
+      API_SERVER_KEY: "${WINTER_API_KEY:?isi WINTER_API_KEY (>=16 karakter) di .env}"
+      API_SERVER_MODEL_NAME: "winter"
+      TELEGRAM_BOT_TOKEN: "${TELEGRAM_BOT_TOKEN:-}"
+      TELEGRAM_ALLOWED_USERS: "${TELEGRAM_CHAT_ID:-}"
+    command: ["gateway", "run"]
+
+  dashboard:
+    image: winter-agent
+    container_name: winter-dashboard
+    restart: unless-stopped
+    # Auth password: dashboard.basic_auth di ~/.winter-hermes/config.yaml (user `winter`, password = WINTER_DASHBOARD_PASSWORD di .env).
+    # Port hanya dipublish di 127.0.0.1 host. Dashboard menyimpan API key: jangan expose ke LAN.
+    ports: ["127.0.0.1:9119:9119"]
+    depends_on: [winter]
+    volumes: ["${HOME}/.winter-hermes:/opt/data"]
+    environment:
+      HERMES_UID: "${HERMES_UID:-501}"
+      HERMES_GID: "${HERMES_GID:-20}"
+      # Sama dengan service `winter`; tanpa ini dashboard menulis API_SERVER_KEY acak ke ~/.winter-hermes/.env dan menimpa kunci gateway.
+      API_SERVER_KEY: "${WINTER_API_KEY}"
+      # Login Google (opsional): isi GOOGLE_CLIENT_ID/SECRET + WINTER_ALLOWED_EMAILS di .env.
+      # Redirect URI di Google Cloud Console: http://127.0.0.1:9119/auth/callback
+      HERMES_DASHBOARD_OIDC_ISSUER: "${GOOGLE_CLIENT_ID:+https://accounts.google.com}"
+      HERMES_DASHBOARD_OIDC_CLIENT_ID: "${GOOGLE_CLIENT_ID:-}"
+      HERMES_DASHBOARD_OIDC_CLIENT_SECRET: "${GOOGLE_CLIENT_SECRET:-}"
+      WINTER_ALLOWED_EMAILS: "${WINTER_ALLOWED_EMAILS:-}"
+    command: ["dashboard", "--host", "0.0.0.0", "--no-open"]
