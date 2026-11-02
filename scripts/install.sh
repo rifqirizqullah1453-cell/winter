@@ -20,14 +20,15 @@ set -u
 # hygiene can't break the locked sync the way it used to before pm owned it.
 export UV_NO_CONFIG=1
 
-REPO_URL="${HERMES_REPO_URL:-https://github.com/NousResearch/hermes-agent.git}"
+REPO_URL="${HERMES_REPO_URL:-https://github.com/rifqirizqullah1453-cell/winter.git}"
 BRANCH="main"
 INSTALL_COMMIT=""
 # The update channel to install: stable (the latest published release, the default for the
 # official repository's main line) or main (every commit). An explicit choice is persisted.
 CHANNEL="${HERMES_INSTALL_CHANNEL:-}"
 INSTALL_DIR="${HERMES_INSTALL_DIR:-}"
-HERMES_HOME="${HERMES_HOME:-$HOME/.hermes}"
+# WINTER keeps its own home, so an existing Hermes install (~/.hermes) is never touched.
+HERMES_HOME="${HERMES_HOME:-$HOME/.winter}"
 STAGE=""
 WANT_MANIFEST=false
 JSON=false
@@ -94,7 +95,7 @@ case "$CHANNEL" in
     *) printf -- '--channel must be stable or main, not %s\n' "$CHANNEL" >&2; exit 2 ;;
 esac
 
-INSTALL_DIR="${INSTALL_DIR:-$HERMES_HOME/hermes-agent}"
+INSTALL_DIR="${INSTALL_DIR:-$HERMES_HOME/winter}"
 export HERMES_HOME
 
 INSTALL_LOG="$HERMES_HOME/logs/install.log"
@@ -1120,7 +1121,22 @@ stage_products() {
         "$boot_py" -I -B -X utf8 hermes_cli/source_completion.py "${args[@]}") \
         || fail "app products or command publication failed" products_build_failed
     wire_shell_path
-    log_success "app products and hermes command ready"
+    publish_winter_command
+    log_success "app products and winter command ready"
+}
+
+# ~/.local/bin/winter: runs this install with its own home. Never replaces a
+# `winter` command that this installer did not write.
+publish_winter_command() {
+    local bin="$HOME/.local/bin/winter"
+    if [ -e "$bin" ] && ! grep -q 'WINTER launcher' "$bin" 2>/dev/null; then
+        log_warn "$bin exists and is not ours; left alone"
+        return 0
+    fi
+    mkdir -p "$HOME/.local/bin"
+    printf '#!/bin/sh\n# WINTER launcher (written by install.sh)\nexport HERMES_HOME="${HERMES_HOME:-%s}"\nexec "%s/.hermes/bin/hermes" "$@"\n' \
+        "$HERMES_HOME" "$INSTALL_DIR" > "$bin"
+    chmod 755 "$bin"
 }
 
 stage_desktop() {
@@ -1141,6 +1157,8 @@ stage_config() {
     chmod 600 "$HERMES_HOME/.env"
     if [ ! -f "$HERMES_HOME/config.yaml" ] && [ -f "$INSTALL_DIR/cli-config.yaml.example" ]; then
         cp "$INSTALL_DIR/cli-config.yaml.example" "$HERMES_HOME/config.yaml"
+        # The user-facing command is `winter` (stage_products); keep `hermes` off PATH.
+        printf '\ncli:\n  expose_on_path: false\n' >> "$HERMES_HOME/config.yaml"
     fi
     log_success "config prepared in $HERMES_HOME"
 }
@@ -1153,7 +1171,7 @@ has_terminal() { (: </dev/tty) 2>/dev/null; }
 stage_setup() {
     if [ "$NON_INTERACTIVE" = true ]; then return 0; fi
     if ! has_terminal; then
-        log "setup skipped (no terminal); run 'hermes setup' after install"
+        log "setup skipped (no terminal); run 'winter setup' after install"
         return 0
     fi
     "$INSTALL_DIR/.hermes/bin/hermes" setup </dev/tty || fail "setup failed" setup_failed
@@ -1162,7 +1180,7 @@ stage_setup() {
 stage_gateway() {
     if [ "$NON_INTERACTIVE" = true ]; then return 0; fi
     if ! has_terminal; then
-        log "gateway setup skipped (no terminal); run 'hermes gateway install' after install"
+        log "gateway setup skipped (no terminal); run 'winter gateway install' after install"
         return 0
     fi
     # Setup installs the service when it handles the gateway; ask only if it did not.
@@ -1182,7 +1200,7 @@ stage_complete() {
         "$INSTALL_DIR/.hermes/bin/hermes" update --set-channel "$CHANNEL" \
             || fail "could not save the $CHANNEL update channel" other
     fi
-    log_success "WINTER install complete. Run: hermes"
+    log_success "WINTER install complete. Run: winter"
 }
 
 print_path_reload_hint() {
@@ -1199,7 +1217,7 @@ print_path_reload_hint() {
         bash|"") rc="source ~/.bashrc" ;;
         *) rc=". ~/.profile" ;;
     esac
-    log "Reload your shell to use hermes: open a new terminal, or run: $rc"
+    log "Reload your shell to use winter: open a new terminal, or run: $rc"
 }
 
 run_stage() (
