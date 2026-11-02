@@ -45,7 +45,24 @@ Most AI apps are built for people who already speak AI. WINTER is built for ever
 
 ## Quick start
 
-You need [Docker](https://docs.docker.com/get-docker/) and `python3`.
+**macOS or Linux, one line in the terminal:**
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/rifqirizqullah1453-cell/winter/main/scripts/install.sh | bash
+```
+
+No Docker needed: the installer fetches everything it needs into `~/.winter` and walks you through setup (pick a model
+and paste a free [OpenRouter key](https://openrouter.ai/keys)). Then open a new terminal and run:
+
+```bash
+winter
+```
+
+Run `winter setup` any time to change the model or key.
+
+### Share it with friends (Docker)
+
+To run WINTER as a web app that friends sign in to, use Docker and `python3`:
 
 ```bash
 git clone https://github.com/rifqirizqullah1453-cell/winter.git
@@ -53,8 +70,8 @@ cd winter
 scripts/setup.sh
 ```
 
-The setup asks for a free [OpenRouter](https://openrouter.ai/keys) API key, a login password and, optionally, a Telegram bot.
-When it finishes, open **http://127.0.0.1:9120** and sign in.
+The setup asks for a free OpenRouter key, a login password and, optionally, a Telegram bot. When it finishes, open
+**http://127.0.0.1:9120** and sign in as `winter` with that password.
 
 | Service | Address |
 | --- | --- |

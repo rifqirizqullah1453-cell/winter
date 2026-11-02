@@ -1160,10 +1160,6 @@ stage_config() {
         # The user-facing command is `winter` (stage_products); keep `hermes` off PATH.
         printf '\ncli:\n  expose_on_path: false\n' >> "$HERMES_HOME/config.yaml"
     fi
-    # WINTER's own persona; written before first launch so the stock one is never seeded.
-    if [ ! -f "$HERMES_HOME/SOUL.md" ] && [ -f "$INSTALL_DIR/SOUL.md" ]; then
-        cp "$INSTALL_DIR/SOUL.md" "$HERMES_HOME/SOUL.md"
-    fi
     log_success "config prepared in $HERMES_HOME"
 }
 
