@@ -660,10 +660,9 @@ def _run_full_setup(config: dict, hermes_home, *, is_existing: bool, imported_fr
 
 
 # First-time mode picker: (menu label, setup_quick runner name) — None falls through to Full Setup.
+# WINTER: no Nous Portal quick path in the first-run menu (`setup --portal` still works).
 _FIRST_TIME_MODES = (
-    ("Quick Setup (Nous Portal) — free OAuth login, no API keys, model + tools (recommended)",
-     "_run_first_time_quick_setup"),
-    ("Full setup — configure every provider, tool & option yourself (bring your own keys)", None),
+    ("Standard setup — pick a provider (e.g. OpenRouter, free models) and paste your key (recommended)", None),
     ("Blank Slate — everything off except the bare minimum; opt in to each capability", "_run_blank_slate_setup"),
 )
 
@@ -734,7 +733,7 @@ def _run_setup_wizard_impl(args):
         # outside this dict (the import from another process), so reload it.
         imported_from = offer_agent_import(hermes_home)
         config = load_config()
-        setup_mode = prompt_choice("How would you like to set up Hermes?", [label for label, _ in _FIRST_TIME_MODES], 0)
+        setup_mode = prompt_choice("How would you like to set up WINTER?", [label for label, _ in _FIRST_TIME_MODES], 0)
         label, runner = _FIRST_TIME_MODES[setup_mode]
         if runner is not None:
             from hermes_cli import setup_quick
