@@ -660,13 +660,6 @@ def _run_full_setup(config: dict, hermes_home, *, is_existing: bool, imported_fr
 
 
 # First-time mode picker: (menu label, setup_quick runner name) — None falls through to Full Setup.
-# WINTER: no Nous Portal quick path in the first-run menu (`setup --portal` still works).
-_FIRST_TIME_MODES = (
-    ("Standard setup — pick a provider (e.g. OpenRouter, free models) and paste your key (recommended)", None),
-    ("Blank Slate — everything off except the bare minimum; opt in to each capability", "_run_blank_slate_setup"),
-)
-
-
 def _run_setup_wizard_impl(args):
     """Run the interactive setup wizard: full/quick (auto-detected), ``--portal``, or one
     ``hermes setup <section>`` from SETUP_SECTIONS."""
@@ -729,20 +722,11 @@ def _run_setup_wizard_impl(args):
         print()
         if reconfigure_requested or quick_requested:
             _info("No existing configuration found — running first-time setup.", None)
-        # Before configuration begins. The plugin install and the import write config.yaml from
-        # outside this dict (the import from another process), so reload it.
-        imported_from = offer_agent_import(hermes_home)
-        config = load_config()
-        setup_mode = prompt_choice("How would you like to set up WINTER?", [label for label, _ in _FIRST_TIME_MODES], 0)
-        label, runner = _FIRST_TIME_MODES[setup_mode]
-        if runner is not None:
-            from hermes_cli import setup_quick
-            # Quick Setup offers to keep a model the import brought (Full setup acknowledges it below).
-            run_args = (config, hermes_home, is_existing) + (
-                (imported_from,) if runner == "_run_first_time_quick_setup" else ())
-            _run_setup_steps([(label, lambda: getattr(setup_quick, runner)(*run_args))])
-            _record_setup_completed(config)
-            return
+        # WINTER: first run asks only for the OpenRouter key; `winter setup <section>` covers the rest.
+        from hermes_cli.setup_quick import _run_winter_easy_setup
+        _run_winter_easy_setup(config)
+        _record_setup_completed(config)
+        return
     _run_full_setup(config, hermes_home, is_existing=is_existing, imported_from=imported_from)
 
     # Save and show summary

@@ -832,7 +832,23 @@ $Stages = @(
     @{ name = "gateway"; title = "Configure gateway service"; category = "configuration"; needs_user_input = $true }
 )
 $Stages += @{ name = "complete"; title = "Finish install"; category = "runtime"; needs_user_input = $false }
+# PM's build snapshot nests deep under %LOCALAPPDATA%; with a long user name a path passes
+# 260 characters and Windows refuses the copy (WinError 3) unless long paths are on.
+# One UAC prompt turns them on machine-wide.
+function Enable-LongPaths {
+    $key = 'HKLM:\SYSTEM\CurrentControlSet\Control\FileSystem'
+    $on = { (Get-ItemProperty -Path $key -Name LongPathsEnabled -ErrorAction SilentlyContinue).LongPathsEnabled -eq 1 }
+    if (& $on) { return }
+    Log "Windows akan minta izin sekali (untuk mendukung nama folder panjang). Klik Yes."
+    try {
+        Start-Process powershell -Verb RunAs -Wait -WindowStyle Hidden -ArgumentList '-NoProfile', '-Command',
+            "New-ItemProperty -Path '$key' -Name LongPathsEnabled -Value 1 -PropertyType DWORD -Force"
+    } catch { }
+    if (-not (& $on)) { Write-Warn "long paths are still off; the install may fail if your user name is long" }
+}
+
 function Stage-Prerequisites {
+    Enable-LongPaths
     if (-not (Ensure-Git)) {
         Fail "no pinned Git artifact for this Windows architecture" unsupported_platform
     }
@@ -1345,6 +1361,20 @@ function Publish-UserCommand {
     [IO.File]::WriteAllText((Join-Path $cmdDir "winter.cmd"), $launcher, (New-Object System.Text.ASCIIEncoding))
     Set-LauncherUserPath $cmdDir
     Write-Ok "winter command installed at $cmdDir"
+    # A Desktop/Start shortcut, so nobody has to open a terminal to start WINTER.
+    try {
+        $shell = New-Object -ComObject WScript.Shell
+        foreach ($folder in @('Desktop', 'Programs')) {
+            $sc = $shell.CreateShortcut((Join-Path ([Environment]::GetFolderPath($folder)) 'WINTER.lnk'))
+            $sc.TargetPath = Join-Path $cmdDir "winter.cmd"
+            $sc.WorkingDirectory = $env:USERPROFILE
+            $sc.Description = 'WINTER'
+            $sc.Save()
+        }
+        Write-Ok "WINTER shortcut added to the Desktop and Start menu"
+    } catch {
+        Write-Warn "Could not create the WINTER shortcut: $($_.Exception.Message)"
+    }
 }
 
 function Test-DesktopProductPresent {
@@ -1440,6 +1470,9 @@ function Stage-Setup {
 }
 
 function Stage-Gateway {
+    # WINTER: the one-question setup connects no messaging platform, so no background
+    # gateway service is installed; `winter gateway install` adds it later.
+    return
     if ($NonInteractive) { return }
     # Setup installs the service when it handles the gateway; ask only if it did not.
     Invoke-InstalledHermes @('gateway', 'install', '--if-missing')

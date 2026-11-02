@@ -1178,6 +1178,9 @@ stage_setup() {
 }
 
 stage_gateway() {
+    # WINTER: the one-question setup connects no messaging platform, so no background
+    # gateway service is installed; `winter gateway install` adds it later.
+    return 0
     if [ "$NON_INTERACTIVE" = true ]; then return 0; fi
     if ! has_terminal; then
         log "gateway setup skipped (no terminal); run 'winter gateway install' after install"

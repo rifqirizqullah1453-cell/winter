@@ -51,20 +51,22 @@ Most AI apps are built for people who already speak AI. WINTER is built for ever
 curl -fsSL https://raw.githubusercontent.com/rifqirizqullah1453-cell/winter/main/scripts/install.sh | bash
 ```
 
-On Windows, in PowerShell:
+On Windows, download **[Install-WINTER.cmd](https://github.com/rifqirizqullah1453-cell/winter/releases/latest/download/Install-WINTER.cmd)**
+and double-click it (if Windows warns, choose *More info* → *Run anyway*). When it finishes, open WINTER from the
+**WINTER** icon on your Desktop. Prefer PowerShell?
 
 ```powershell
 irm https://raw.githubusercontent.com/rifqirizqullah1453-cell/winter/main/scripts/install.ps1 | iex
 ```
 
-No Docker needed: the installer fetches everything it needs into `~/.winter` (`%LOCALAPPDATA%\winter` on Windows) and walks you through setup (pick a model
-and paste a free [OpenRouter key](https://openrouter.ai/keys)). Then open a new terminal and run:
+No Docker needed: the installer fetches everything it needs into `~/.winter` (`%LOCALAPPDATA%\winter` on Windows) and asks one question: your free
+[OpenRouter key](https://openrouter.ai/keys). Then open a new terminal and run:
 
 ```bash
 winter
 ```
 
-Run `winter setup` any time to change the model or key.
+Run `winter setup model` any time to change the model or key.
 
 ### Share it with friends (Docker)
 

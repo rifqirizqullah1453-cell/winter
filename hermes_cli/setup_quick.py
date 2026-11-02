@@ -177,6 +177,33 @@ def _run_first_time_quick_setup(config: dict, hermes_home, is_existing: bool, im
     _print_setup_summary(config, hermes_home)
 
 
+WINTER_FREE_MODEL = "thinkingmachines/inkling:free"
+
+
+def _run_winter_easy_setup(config: dict) -> None:
+    """WINTER first run: one question (the OpenRouter key), a free model, defaults for the rest.
+    Everything else stays reachable through ``winter setup <section>``."""
+    from hermes_cli.setup import (
+        _apply_default_agent_settings, _info, masked_secret_prompt, print_success, print_warning,
+        save_config, save_env_value,
+    )
+    _info(None, "  WINTER butuh kunci OpenRouter (gratis) supaya bisa menjawab.",
+          "  1. Buka https://openrouter.ai/keys lalu masuk (bisa pakai akun Google).",
+          "  2. Klik \"Create API Key\", lalu salin kuncinya.", None)
+    while True:
+        key = masked_secret_prompt("  Tempel kunci di sini lalu tekan Enter: ").strip()
+        if key.startswith("sk-or-"):
+            break
+        print_warning("  Kunci OpenRouter selalu diawali \"sk-or-\". Coba salin lagi.")
+    save_env_value("OPENROUTER_API_KEY", key)
+    config["model"] = {"default": WINTER_FREE_MODEL, "provider": "openrouter",
+                       "base_url": "https://openrouter.ai/api/v1"}
+    _apply_default_agent_settings(config)
+    save_config(config)
+    print()
+    print_success("Beres! WINTER siap dipakai.")
+
+
 def _print_macos_fda_tip() -> None:
     """One-time macOS tip: one Full Disk Access grant kills every per-folder prompt. Same
     prompt-free probe as doctor's check_macos_full_disk_access (the FDA-gated TCC dir never
