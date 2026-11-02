@@ -25,8 +25,8 @@ param(
     [string]$Branch = "main",
     [string]$Commit = "",
     [string]$Channel = $(if ($env:HERMES_INSTALL_CHANNEL) { $env:HERMES_INSTALL_CHANNEL } else { "" }),
-    [string]$HermesHome = $(if ($env:HERMES_HOME) { $env:HERMES_HOME } else { "$env:LOCALAPPDATA\hermes" }),
-    [string]$InstallDir = $(if ($env:HERMES_HOME) { "$env:HERMES_HOME\hermes-agent" } else { "$env:LOCALAPPDATA\hermes\hermes-agent" }),
+    [string]$HermesHome = $(if ($env:HERMES_HOME) { $env:HERMES_HOME } else { "$env:LOCALAPPDATA\winter" }),
+    [string]$InstallDir = $(if ($env:HERMES_HOME) { "$env:HERMES_HOME\winter" } else { "$env:LOCALAPPDATA\winter\winter" }),
     [switch]$Manifest,
     [string]$Stage,
     [switch]$ProtocolVersion,
@@ -76,7 +76,7 @@ $script:BoundParams = $PSBoundParameters
 # Under iex, script scope is the caller's session and outlives a run; start
 # each run without the previous run's answer (see Set-LauncherUserPath).
 $script:BinDirOnCallerPath = $null
-$RepoUrl = if ($env:HERMES_REPO_URL) { $env:HERMES_REPO_URL } else { "https://github.com/NousResearch/hermes-agent.git" }
+$RepoUrl = if ($env:HERMES_REPO_URL) { $env:HERMES_REPO_URL } else { "https://github.com/rifqirizqullah1453-cell/winter.git" }
 
 # --- BEGIN GENERATED: bootstrap pins (scripts/gen-bootstrap-pins.py) ---
 # Derived from pm/lock.json. DO NOT EDIT BY HAND:
@@ -327,13 +327,13 @@ function Initialize-ResolvedPaths {
         ConvertTo-LongPath $HermesHome
     } else {
         ConvertTo-LongPath $(
-            if ($env:HERMES_HOME) { $env:HERMES_HOME } else { "$env:LOCALAPPDATA\hermes" }
+            if ($env:HERMES_HOME) { $env:HERMES_HOME } else { "$env:LOCALAPPDATA\winter" }
         )
     }
     $resolvedDir = if ($script:BoundParams.ContainsKey('InstallDir')) {
         ConvertTo-LongPath $InstallDir
     } else {
-        Join-Path $resolvedHome 'hermes-agent'
+        Join-Path $resolvedHome 'winter'
     }
     # A HermesHome equal to or inside InstallDir puts the pm tool store
     # (<home>\tools) inside the checkout: the repository stage's
@@ -623,7 +623,7 @@ function Write-Banner {
     Write-Host "+---------------------------------------------------------+" -ForegroundColor Magenta
     Write-Host "|             * WINTER Installer                    |" -ForegroundColor Magenta
     Write-Host "+---------------------------------------------------------+" -ForegroundColor Magenta
-    Write-Host "|  An open source AI agent by Nous Research.              |" -ForegroundColor Magenta
+    Write-Host "|  Your personal AI assistant. By qube.                   |" -ForegroundColor Magenta
     Write-Host "+---------------------------------------------------------+" -ForegroundColor Magenta
     Write-Host ""
 }
@@ -1337,8 +1337,14 @@ function Publish-UserCommand {
         Pop-Location
     }
     if ($code) { Fail "launcher staging failed" products_build_failed }
-    Set-LauncherUserPath $binDir
-    Write-Ok "hermes command installed at $binDir"
+    # The user-facing command is `winter`; its own folder goes on PATH so a
+    # separately installed `hermes` is never shadowed.
+    $cmdDir = Join-Path $HermesHome "cmd"
+    New-Item -ItemType Directory -Force -Path $cmdDir | Out-Null
+    $launcher = "@echo off`r`nREM WINTER launcher (written by install.ps1)`r`nsetlocal`r`nif not defined HERMES_HOME set `"HERMES_HOME=$HermesHome`"`r`ncall `"$binDir\hermes`" %*`r`nexit /b %ERRORLEVEL%`r`n"
+    [IO.File]::WriteAllText((Join-Path $cmdDir "winter.cmd"), $launcher, (New-Object System.Text.ASCIIEncoding))
+    Set-LauncherUserPath $cmdDir
+    Write-Ok "winter command installed at $cmdDir"
 }
 
 function Test-DesktopProductPresent {
@@ -1388,7 +1394,7 @@ function Write-PathReloadHint {
     # iex'd text always runs in the caller's process, where the prepend in
     # Set-LauncherUserPath already made `hermes` resolvable.
     if (-not $script:RunAsFile -or $script:BinDirOnCallerPath -ne $false) { return }
-    Log 'Restart your terminal to use hermes, or run: $env:Path = [Environment]::GetEnvironmentVariable(''Path'',''User'') + '';'' + [Environment]::GetEnvironmentVariable(''Path'',''Machine'')'
+    Log 'Restart your terminal to use winter, or run: $env:Path = [Environment]::GetEnvironmentVariable(''Path'',''User'') + '';'' + [Environment]::GetEnvironmentVariable(''Path'',''Machine'')'
 }
 
 function Stage-Config {
@@ -1402,7 +1408,11 @@ function Stage-Config {
     }
     $cfg = Join-Path $HermesHome "config.yaml"
     $cfgExample = Join-Path $InstallDir "cli-config.yaml.example"
-    if (-not (Test-Path $cfg) -and (Test-Path $cfgExample)) { Copy-Item $cfgExample $cfg }
+    if (-not (Test-Path $cfg) -and (Test-Path $cfgExample)) {
+        Copy-Item $cfgExample $cfg
+        # The user-facing command is `winter` (Publish-UserCommand); keep `hermes` off PATH.
+        Add-Content -Path $cfg -Value "`ncli:`n  expose_on_path: false"
+    }
     Write-Ok "config prepared in $HermesHome"
 }
 
@@ -1503,7 +1513,7 @@ function Stage-Complete {
         $marker | ConvertTo-Json -Depth 4 | Set-Content (Join-Path $InstallDir ".hermes-bootstrap-complete") -Encoding UTF8
     }
     if ($Channel) { Invoke-InstalledHermes @('update', '--set-channel', $Channel) }
-    if ($commit) { Write-Ok "WINTER install complete (pinned $commit). Run: hermes" }
+    if ($commit) { Write-Ok "WINTER install complete (pinned $commit). Run: winter" }
 }
 
 function New-DesktopShortcuts {
