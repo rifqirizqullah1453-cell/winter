@@ -59,8 +59,8 @@ and double-click it (if Windows warns, choose *More info* → *Run anyway*). Whe
 irm https://raw.githubusercontent.com/rifqirizqullah1453-cell/winter/main/scripts/install.ps1 | iex
 ```
 
-No Docker needed: the installer fetches everything it needs into `~/.winter` (`%LOCALAPPDATA%\winter` on Windows) and asks one question: your free
-[OpenRouter key](https://openrouter.ai/keys). Then open a new terminal and run:
+No Docker needed: the installer fetches everything it needs into `~/.winter` (`%LOCALAPPDATA%\winter` on Windows) and opens your browser once so you can sign in to
+[OpenRouter](https://openrouter.ai) (free, Google sign-in works) — no key to copy. Then open a new terminal and run:
 
 ```bash
 winter

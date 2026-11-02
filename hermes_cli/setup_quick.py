@@ -187,14 +187,23 @@ def _run_winter_easy_setup(config: dict) -> None:
         _apply_default_agent_settings, _info, masked_secret_prompt, print_success, print_warning,
         save_config, save_env_value,
     )
-    _info(None, "  WINTER butuh kunci OpenRouter (gratis) supaya bisa menjawab.",
-          "  1. Buka https://openrouter.ai/keys lalu masuk (bisa pakai akun Google).",
-          "  2. Klik \"Create API Key\", lalu salin kuncinya.", None)
-    while True:
-        key = masked_secret_prompt("  Tempel kunci di sini lalu tekan Enter: ").strip()
-        if key.startswith("sk-or-"):
-            break
-        print_warning("  Kunci OpenRouter selalu diawali \"sk-or-\". Coba salin lagi.")
+    _info(None, "  WINTER memakai OpenRouter (gratis) supaya bisa menjawab.",
+          "  Browser akan terbuka: masuk (bisa pakai akun Google), lalu klik \"Authorize\".",
+          "  Setelah itu kembali ke jendela ini.", None)
+    input("  Tekan Enter untuk membuka browser... ")
+    try:
+        from hermes_cli.auth_openrouter import _openrouter_pkce_login
+        key = _openrouter_pkce_login()["api_key"]
+    except Exception:
+        # No browser, a denied consent or a timeout: fall back to pasting a key by hand.
+        _info(None, "  Tidak berhasil lewat browser. Cara manual:",
+              "  1. Buka https://openrouter.ai/keys lalu masuk.",
+              "  2. Klik \"Create API Key\", lalu salin kuncinya.", None)
+        while True:
+            key = masked_secret_prompt("  Tempel kunci di sini lalu tekan Enter: ").strip()
+            if key.startswith("sk-or-"):
+                break
+            print_warning("  Kunci OpenRouter selalu diawali \"sk-or-\". Coba salin lagi.")
     save_env_value("OPENROUTER_API_KEY", key)
     config["model"] = {"default": WINTER_FREE_MODEL, "provider": "openrouter",
                        "base_url": "https://openrouter.ai/api/v1"}
