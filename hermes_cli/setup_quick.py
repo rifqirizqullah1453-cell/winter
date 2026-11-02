@@ -198,7 +198,8 @@ def _run_winter_easy_setup(config: dict) -> None:
     save_env_value("OPENROUTER_API_KEY", key)
     config["model"] = {"default": WINTER_FREE_MODEL, "provider": "openrouter",
                        "base_url": "https://openrouter.ai/api/v1"}
-    _apply_default_agent_settings(config)
+    with open(os.devnull, "w") as sink, contextlib.redirect_stdout(sink):  # its English notes are noise here
+        _apply_default_agent_settings(config)
     save_config(config)
     print()
     print_success("Beres! WINTER siap dipakai.")

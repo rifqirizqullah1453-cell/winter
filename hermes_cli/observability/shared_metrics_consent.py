@@ -150,6 +150,8 @@ def offer_consent(config: dict | None = None, *, reask: bool = False) -> bool:
 def offer_consent_if_undecided(config: dict | None = None) -> None:
     """The end-of-setup offer: every ``hermes setup`` flow funnels through the setup-completed
     record, so this one call covers Quick, Full, Blank Slate, Portal and ``--quick``."""
+    # WINTER: never offered; metrics stay off unless the user opts in via `setup telemetry`.
+    return
     from hermes_cli.config import is_managed
     from hermes_cli.setup import is_noninteractive
 
@@ -168,6 +170,8 @@ def offer_consent_before_chat(args: Any) -> None:
     """One-time offer before an interactive chat on a profile that never answered. Skipped for
     anything without a person at a terminal (``-q``, piped or JSON output, spawned actions) and for
     a Desktop-spawned pane (the app shows its own strip)."""
+    # WINTER: never offered; metrics stay off unless the user opts in via `setup telemetry`.
+    return
     from hermes_cli.config import is_managed
     from hermes_cli.setup import is_noninteractive
 
