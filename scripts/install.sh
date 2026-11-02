@@ -1170,6 +1170,12 @@ has_terminal() { (: </dev/tty) 2>/dev/null; }
 
 stage_setup() {
     if [ "$NON_INTERACTIVE" = true ]; then return 0; fi
+    # WINTER: rerunning the installer is the update path; an install that already has its key
+    # keeps its setup (change it any time with `winter setup model`).
+    if grep -q '^OPENROUTER_API_KEY=sk-' "$HERMES_HOME/.env" 2>/dev/null; then
+        log_success "already set up; keeping your settings"
+        return 0
+    fi
     if ! has_terminal; then
         log "setup skipped (no terminal); run 'winter setup' after install"
         return 0

@@ -2,12 +2,12 @@
 REM ============================================================================
 REM WINTER Installer for Windows: download this file and double-click it.
 REM It runs scripts/install.ps1 from the public repo, then waits for a key so the
-REM window never vanishes before the user reads the result.
+REM window never vanishes before the user reads the result. Running it again updates WINTER.
 REM ============================================================================
 
 echo.
 echo  WINTER Installer
-echo  Memasang WINTER. Ini bisa makan waktu 20-40 menit, jangan tutup jendela ini.
+echo  Memasang atau memperbarui WINTER. Pertama kali bisa 20-40 menit, jangan tutup jendela ini.
 echo.
 
 powershell -ExecutionPolicy ByPass -NoProfile -Command "& ([scriptblock]::Create((irm https://raw.githubusercontent.com/rifqirizqullah1453-cell/winter/main/scripts/install.ps1))) -IncludeDesktop"

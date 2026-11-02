@@ -857,6 +857,9 @@ function Enable-LongPaths {
 
 function Stage-Prerequisites {
     Enable-LongPaths
+    # An update over a running WINTER (app, chat or gateway) hits locked files; close it first.
+    Get-Process | Where-Object { $_.Path -and $_.Path.StartsWith("$HermesHome\", [StringComparison]::OrdinalIgnoreCase) } |
+        Stop-Process -Force -ErrorAction SilentlyContinue
     if (-not (Ensure-Git)) {
         Fail "no pinned Git artifact for this Windows architecture" unsupported_platform
     }
@@ -1484,6 +1487,13 @@ function Invoke-InstalledHermes([string[]]$CommandArgs) {
 
 function Stage-Setup {
     if ($NonInteractive) { return }
+    # WINTER: rerunning the installer is the update path; an install that already has its key
+    # keeps its setup (change it any time with `winter setup model`).
+    $envFile = Join-Path $HermesHome ".env"
+    if ((Test-Path $envFile) -and (Select-String -Path $envFile -Pattern '^OPENROUTER_API_KEY=sk-' -Quiet)) {
+        Write-Ok "already set up; keeping your settings"
+        return
+    }
     Invoke-InstalledHermes @('setup')
 }
 
