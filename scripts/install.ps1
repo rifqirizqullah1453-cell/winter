@@ -563,7 +563,15 @@ function Get-PinnedGit {
     if (-not $pin) { return $null }
     $entry = Join-Path (Get-PmStoreRoot) "git-$($script:GitPinVersion)-$target"
     $gitExe = Join-Path $entry "cmd\git.exe"
-    if (Test-Path $gitExe) { return $gitExe }
+    if (Test-Path $gitExe) {
+        # A half-removed or foreign-owned copy from an earlier run can exist yet refuse to start
+        # ("error launching git: Access is denied"); reinstall it rather than fail the clone.
+        try { Invoke-Native { & $gitExe --version 2>$null } | Out-Null; $ok = -not $LASTEXITCODE } catch { $ok = $false }
+        if ($ok) { return $gitExe }
+        Write-Warn "git in $entry does not run; reinstalling it"
+        Remove-Item -Recurse -Force $entry -ErrorAction SilentlyContinue
+        if (Test-Path $entry) { Fail "cannot remove the broken git in $entry; delete $(Get-PmStoreRoot) and rerun" git_extract_failed }
+    }
     Log "installing git $($script:GitPinVersion) ($target)"
     $tmpDir = Join-Path ([IO.Path]::GetTempPath()) "hermes-git-bootstrap-$PID"
     try {
