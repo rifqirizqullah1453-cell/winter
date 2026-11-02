@@ -1369,14 +1369,24 @@ function Publish-UserCommand {
     [IO.File]::WriteAllText((Join-Path $cmdDir "winter.cmd"), $launcher, (New-Object System.Text.ASCIIEncoding))
     Set-LauncherUserPath $cmdDir
     Write-Ok "winter command installed at $cmdDir"
-    # A Desktop/Start shortcut, so nobody has to open a terminal to start WINTER.
+    Set-WinterShortcuts
+}
+
+# A Desktop/Start "WINTER" shortcut, so nobody has to open a terminal. With the desktop app it
+# runs `winter gui` (winter.cmd sets HERMES_HOME, then the app detaches) in a minimized console.
+function Set-WinterShortcuts([string]$AppExe = '') {
     try {
         $shell = New-Object -ComObject WScript.Shell
         foreach ($folder in @('Desktop', 'Programs')) {
             $sc = $shell.CreateShortcut((Join-Path ([Environment]::GetFolderPath($folder)) 'WINTER.lnk'))
-            $sc.TargetPath = Join-Path $cmdDir "winter.cmd"
+            $sc.TargetPath = Join-Path (Join-Path $HermesHome "cmd") "winter.cmd"
             $sc.WorkingDirectory = $env:USERPROFILE
             $sc.Description = 'WINTER'
+            if ($AppExe) {
+                $sc.Arguments = 'gui'
+                $sc.WindowStyle = 7
+                $sc.IconLocation = "$AppExe,0"
+            }
             $sc.Save()
         }
         Write-Ok "WINTER shortcut added to the Desktop and Start menu"
@@ -1535,7 +1545,7 @@ function Confirm-DesktopArtifact {
     } finally {
         Pop-Location
     }
-    New-DesktopShortcuts -TargetExe $desktopExe
+    Set-WinterShortcuts $desktopExe
 }
 
 function Stage-Complete {

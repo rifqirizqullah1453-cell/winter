@@ -7,10 +7,10 @@ REM ============================================================================
 
 echo.
 echo  WINTER Installer
-echo  Memasang WINTER. Ini bisa makan waktu 10-20 menit, jangan tutup jendela ini.
+echo  Memasang WINTER. Ini bisa makan waktu 20-40 menit, jangan tutup jendela ini.
 echo.
 
-powershell -ExecutionPolicy ByPass -NoProfile -Command "iex (irm https://raw.githubusercontent.com/rifqirizqullah1453-cell/winter/main/scripts/install.ps1)"
+powershell -ExecutionPolicy ByPass -NoProfile -Command "& ([scriptblock]::Create((irm https://raw.githubusercontent.com/rifqirizqullah1453-cell/winter/main/scripts/install.ps1))) -IncludeDesktop"
 
 echo.
 if %ERRORLEVEL% NEQ 0 (
