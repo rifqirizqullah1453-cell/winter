@@ -183,10 +183,12 @@ WINTER_FREE_MODEL = "thinkingmachines/inkling:free"
 def _run_winter_easy_setup(config: dict) -> None:
     """WINTER first run: one question (the OpenRouter key), a free model, defaults for the rest.
     Everything else stays reachable through ``winter setup <section>``."""
-    from hermes_cli.setup import (
-        _apply_default_agent_settings, _info, masked_secret_prompt, print_success, print_warning,
-        save_config, save_env_value,
-    )
+    from hermes_cli.setup import _info, masked_secret_prompt, print_warning
+    # A key handed over by whoever shared the installer (set in Install-WINTER.cmd) skips sign-in.
+    key = os.environ.get("WINTER_OPENROUTER_KEY", "").strip()
+    if key.startswith("sk-or-"):
+        _finish_winter_easy_setup(config, key)
+        return
     _info(None, "  WINTER memakai OpenRouter (gratis) supaya bisa menjawab.",
           "  Browser akan terbuka: masuk (bisa pakai akun Google), lalu klik \"Authorize\".",
           "  Setelah itu kembali ke jendela ini.", None)
@@ -204,6 +206,11 @@ def _run_winter_easy_setup(config: dict) -> None:
             if key.startswith("sk-or-"):
                 break
             print_warning("  Kunci OpenRouter selalu diawali \"sk-or-\". Coba salin lagi.")
+    _finish_winter_easy_setup(config, key)
+
+
+def _finish_winter_easy_setup(config: dict, key: str) -> None:
+    from hermes_cli.setup import _apply_default_agent_settings, print_success, save_config, save_env_value
     save_env_value("OPENROUTER_API_KEY", key)
     config["model"] = {"default": WINTER_FREE_MODEL, "provider": "openrouter",
                        "base_url": "https://openrouter.ai/api/v1"}
